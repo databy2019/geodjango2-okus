@@ -1,0 +1,6 @@
+{% autoescape off %}
+Hallo {{ user.username }}, Selamat datang di pendafataran WebGIS Kabupaten OKU Selatan. </br>
+Silahkan konfirmasi link pendaftaran di email Anda,
+http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+Jika ini bukan Anda, silahkan abaikan email ini.
+{% endautoescape %}

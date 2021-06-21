@@ -1,0 +1,39 @@
+{% extends 'map2.html' %}
+{% load static %}
+{% load leaflet_tags %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-1">
+      <img src='{% static "img/logookus.png" %}' height="100" width="80">
+    </div>
+    <div class="col-md-11">
+      <h1 class="font-weight-light">WebGIS Kabupaten OKU Selatan</h1>
+      <h4 class="font-weight-light">Data spasial untuk OKU Selatan Maju</h4>
+    </div>
+    <!--<div class="font-weight-light">
+      Selamat datang di WebGIS Kabupaten OKU Selatan Site, {% if user.is_authenticated %}{{ user.username }}{% else %} pengunjung{% endif %}!
+    </div>-->
+  </div>
+<div class="container" aria-atomic="true">
+</div>
+{% endblock %}
+
+{% block line-midle%}
+<!-- Call to Action Well -->
+    <div class="card text-white bg-secondary my-5 py-2 text-center">
+      <div class="card-body">
+        <p class="text-white m-0">WebGIS dan Manajemen Basisdata Spasial Kabupaten OKU Selatan untuk Mendukung Pembangunan Terstruktur dan Terencana!</p>
+      </div>
+    </div>
+{% endblock %}
+
+
+{% block footer %}
+  <p>
+    <strong>Total users registered: </strong> {{ count }}
+  </p>
+  <p>
+    <div class="font-weight-light font-size 16">Aplikasi Sistem Informasi Geografis, Copyright: Poklit Gitar, PUslit Geoteknologi - LIPI 2020</div>
+  </p>
+{% endblock %}

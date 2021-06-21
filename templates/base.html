@@ -1,0 +1,557 @@
+{% load leaflet_tags %}
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <title>{% block title %}OKUS WebGIS{% endblock %}</title>
+  <style type="text/css">
+    .asteriskField {
+      display: none;
+    }
+
+    form .alert ul li {
+      list-style: none;
+    }
+
+    form .alert ul {
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+  <!-- untuk leaflet -->
+    {% leaflet_js %}
+    {% leaflet_css %}
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+      <link rel="stylesheet" href="{% static 'leaflet-groupedlayercontrol/leaflet.groupedlayercontrol.css' %}">
+      <script src="{% static 'leaflet-groupedlayercontrol/leaflet.groupedlayercontrol.js' %}"></script>
+      <script src="{% static 'js/mousePosition.js' %}"></script>
+    <style>
+    .table-condensed{
+      font-size: 11px;
+    }
+    </style>
+  <style>
+    	.leaflet-popup-content-wrapper{
+    		border-radius: 0px;
+    		background: white;
+    		color: black;
+    		font-size: 9px;
+    		padding : 2px;
+    		margin: 2px;
+    	}
+    	.leaflet-popup-content{
+    		margin: 10px;
+    	}
+    	.leaflet-popup-tip{
+    		background: silver;
+    	}
+    	.leaflet-popup-close-button{
+         <!--display: none;-->
+    	}
+    	.leaflet-tooltip {
+		    position: absolute;
+		    padding: 0px;
+		    background-color: 'silver';
+		    border: 1px solid transparent;
+		    border-radius: 1px;
+		    color: black;
+		    white-space: nowrap;
+		    -webkit-user-select: none;
+		    -moz-user-select: none;
+		    -ms-user-select: none;
+		    user-select: auto;
+		    pointer-events: none;
+		    box-shadow: 0 1px 1px rgba(0,0,0,0.4);
+		    font-size: 9px;
+		}
+		.leaflet-popup-content {
+	        margin: auto auto;
+	        line-height:  0.1;
+	    }
+    </style>
+
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}">Home</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="">Infrastruktur</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://app-gis.maps.arcgis.com/apps/opsdashboard/index.html#/3b7c320b69ce4a9ea771dd3c6f797613">Lahan</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://arcg.is/19H48i">Tentang</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'contact' %}">Kontak</a>
+          </li>
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'home' %}">Page 2</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'home' %}">Page 3</a>
+            </li>
+          {% endif %}
+        </ul>
+        {% if user.is_authenticated %}
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {{ user.username }}
+              </a>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="{% url 'password_change' %}">Change password</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="{% url 'logout' %}">Log out</a>
+              </div>
+            </li>
+          </ul>
+        {% else %}
+          <form class="form-inline my-2 my-lg-0">
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary">Log in</a>
+            <a href="{% url 'daftar' %}" class="btn btn-primary ml-2">Sign up</a>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+  <!-- Page Map -->
+  <div class="container">
+    <!-- Heading Row -->
+    <div class="row align-items-center my-5">
+      <div id="mainMap" class="col-lg-8"  style="height:520px; width:700px">
+        <!--<img class="img-fluid rounded mb-4 mb-lg-0" src="{%static 'img/frame 900 x 600.png'%}" alt=""> -->
+      </div>
+      <!-- /.col-lg-8 -->
+      <div class="col-lg-4">
+        <h1 class="font-weight-light">Basisdata Spasial untuk OKU Selatan Maju</h1>
+        <p>This is a template that is great for small businesses. It doesn't have too much fancy flare to it, but it makes a great use of the standard Bootstrap core components. Feel free to use this template for any project you want!</p>
+        <a class="btn btn-primary" href="#">Call to Action!</a>
+      </div>
+      <!-- /.col-md-4 -->
+    </div>
+    <!-- /.row -->
+
+    {% block line-midle%}
+    {% endblock %}
+
+    <!-- Content Row -->
+    <div class="row">
+      <div class="col-md-4 mb-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="card-title">Kependudukan</h2>
+            <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Rem magni quas ex numquam, maxime minus quam molestias corporis quod, ea minima accusamus.</p>
+          </div>
+          <div class="card-footer">
+            <a href="#" class="btn btn-primary btn-sm">More Info</a>
+          </div>
+        </div>
+      </div>
+      <!-- /.col-md-4 -->
+      <div class="col-md-4 mb-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="card-title">Infrastruktur</h2>
+            <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod tenetur ex natus at dolorem enim! Nesciunt pariatur voluptatem sunt quam eaque, vel, non in id dolore voluptates quos eligendi labore.</p>
+          </div>
+          <div class="card-footer">
+            <a href="#" class="btn btn-primary btn-sm">More Info</a>
+          </div>
+        </div>
+      </div>
+      <!-- /.col-md-4 -->
+      <div class="col-md-4 mb-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="card-title">Pengunaan Lahan</h2>
+            <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Rem magni quas ex numquam, maxime minus quam molestias corporis quod, ea minima accusamus.</p>
+          </div>
+          <div class="card-footer">
+            <a href="#" class="btn btn-primary btn-sm">More Info</a>
+          </div>
+        </div>
+      </div>
+      <!-- /.col-md-4 -->
+
+    </div>
+    <!-- /.row -->
+  </div>
+
+      <table class="table  ml-4">
+
+          <tr class="row">
+            <th class="col-sm-7">
+              <p class="important">
+                Dataspatial Kabupaten OKU Selatan
+              </p>
+              <div id="mainMap" style="height: 700px; width: 100%;"></div></th>
+              <th class="col-sm-4">
+                <table class="table table-bordered table-condensed">
+                <thead class="thead-dark">
+                  <tr class="row text-center">
+                      <th class="col-sm-2">Kode Kecamatan</th>
+                      <th class="col-sm-4">Nama Kecamatan</th>
+                      <th class="col-sm-6">Keterangan</th>
+
+                  </tr>
+                  </thead>
+                  <tbody>
+                    <p class="important">
+                      Tabel Daftar Kecamatan
+                    </p>
+                  {% for obj in all_lists %}
+
+                      <tr class="table-success row">
+                          <td class="col-sm-2">{{ obj.kodeKec }}</td>
+                          <td class="col-sm-4 text-right">{{ obj.namaKec }}</td>
+                          <td class="col-sm-6 text-right">{{ obj.keterangan }}</td>
+
+                      </tr>
+
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </th>
+
+              <th class="col-sm-2"></th>
+          </tr>
+
+
+      </table>
+
+
+
+  <div class="container">
+    {% block footer %}
+    {% endblock %}
+  </div>
+
+
+  <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+</body>
+</html>
+<script>
+    var map = L.map('mainMap',{
+      center:[-4.57,103.89], zoom:10,
+    });
+
+    var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+        maxZoom: 20,
+        subdomains:['mt0','mt1','mt2','mt3']
+    });
+    var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        });
+    var OpenTopoMap = L.tileLayer('http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    });
+    osm.addTo(map);
+
+    //awal menampilkan data sarana
+  var sarpras = L.geoJson(
+    null, {
+            pointToLayer: function (feature, latlng) {
+              return L.marker(latlng, {
+                icon: L.icon({
+              iconUrl: "static/img/red.png",
+              iconSize: [12, 14],
+              iconAnchor: [12, 28],
+              popupAnchor: [0, -25]
+            }),
+            title: feature.properties.namaSarpras,
+            riseOnHover: true
+            });
+            },
+      onEachFeature: function(feature,layer){
+        if (feature.properties){
+          layer.bindTooltip(feature.properties.kodeSarpras, {permanent:true, className: "my-label", offset: [-5, -25]})
+          var content="<table class='table table-sm table-bordered=0px table-condensed'>" + "<tr><th>Kode Kegiatan</th><td>" + feature.properties.kodeSarpras + "</td></tr>" + "<tr><th>Nama Kegiatan</th><td>" + feature.properties.namaSarpras + "</td></tr>" + "<tr><th>Tahun</th><td>" + feature.properties.tahun + "</td></tr>" +"<tr><th>Foto</th><td><img src='"+ feature.properties.foto + "'width='100' /></td></tr>"+ "</table>";
+          layer.on({
+            click:function(e){
+              layer.bindPopup(content).openPopup(e.latlng);
+            }
+          });
+        }
+      }
+    }).addTo(map);
+
+    var sarprasUrl = 'sarpras';
+
+    $.getJSON(sarprasUrl, function (data) {
+      sarpras.addData(data);
+    });
+
+  //akhir menampilkan data sarana
+
+    //loading Kecamatan map
+    var kecamatan = L.geoJson(
+      null,{
+      style: function(feature){
+
+        value = feature.properties.kodeKec;
+        if (value == 160901){
+          return {color: "#F9E00A ", weight:1};
+        }else if (value == 160902){
+            return {color: "#E6B0AA", weight:1};
+        }else if (value == 160903){
+            return {color: "#C0392B", weight:1};
+        }else if (value == 160904){
+            return {color: "#641E16", weight:1};
+        }else if (value == 160905){
+            return {color: "#C39BD3", weight:1};
+        }else if (value == 160906){
+            return {color: "#512E5F", weight:1};
+        }else if (value == 160907){
+            return {color: "#A9CCE3", weight:1};
+        }else if (value == 160908){
+            return {color: "#1F618D", weight:1};
+        }else if (value == 160909){
+            return {color: "#A3E400", weight:1};
+        }else if (value == 160910){
+            return {color: "#0000ff", weight:1};
+        }else if (value == 160911){
+            return {color: "#A9DFBF", weight:1};
+        }else if (value == 160912){
+            return {color: "#145A32", weight:1};
+        }else if (value == 160913){
+            return {color: "#F9E70F", weight:1};
+        }else if (value == 160914){
+            return {color: "#7D6608", weight:1};
+        }else if (value == 160915){
+            return {color: "#F0B27A", weight:1};
+        }else if (value == 160916){
+            return {color: "#D35400", weight:1};
+        }else if (value == 160917){
+            return {color: "#4D5656", weight:1};
+        }else if (value == 160918){
+            return {color: "#5D6D7E", weight:1};
+        }else{
+            return {color: "#212F3D", weight:1};
+        }
+      },
+      onEachFeature: function(feature,layer){
+
+        if (feature.properties){
+          layer.bindTooltip(feature.properties.namaKec2, {permanent:true, className: "my-label", offset: [-5, -25]})
+          var content="<table class='table table-striped table-bordered=0px table-condensed'>" + "<tr><th>Kode Kecamatan</th><td><a href=''>" + feature.properties.kodeKec + "</a></td></tr>"+ "<tr><th>Kecamatan</th><td>" + feature.properties.namaKec + "</td></tr>"
+          + "</table>";
+          layer.on({
+            click:function(e){
+              layer.bindPopup(content).openPopup(e.latlng);
+            }
+          });
+        }
+      }
+    }
+    ).addTo(map)
+
+    var kecamatanUrl = 'kecamatan'
+
+    $.getJSON(kecamatanUrl, function(data){
+      kecamatan.addData(data);
+    });
+
+    //awal menampilkan data jalan propinsi
+  var jalanpropinsi = L.geoJson(null,{
+      style: function(feature){
+              value = feature.properties.id;
+              if (value >=0){
+                 return {color: "red", weight: 3, };
+              }else {
+                 return {color: "red", weight: 3, };
+              }
+      },
+      onEachFeature: function(feature,layer){
+        if (feature.properties){
+          var content="<table class='table table-xl table-bordered=0px table-condensed width=200'>" + "<tr><th>Kode Jalan</th><td>" + feature.properties.kodeJalanP + "</td></tr>" + "<tr><th>Nama Jalan</th><td>" + feature.properties.namaJalanP + "</td></tr>"+ "<tr><th>Fungsi Jalan</th><td>" + feature.properties.fungsiJalanP + "</td></tr>"+"<tr><th>Foto</th><td><img src='"+ feature.properties.foto + "'width='100' /></td></tr>"+ "</table>";
+          layer.on({
+            click:function(e){
+              layer.bindPopup(content).openPopup(e.latlng);
+            }
+          });
+        }
+      }
+    }).addTo(map)
+
+    var jalanpropinsiUrl = 'jalanpropinsi';
+    $.getJSON(jalanpropinsiUrl, function (data) {
+      jalanpropinsi.addData(data);
+    });
+  //akhir menampilkan data jalan propinsi
+
+      //awal menampilkan data jalan kabupaten
+      var jalankabupaten = L.geoJson(null,{
+           style: function(feature){
+              value = feature.properties.id;
+              if (value >=0){
+                 return {color: "#000000", weight: 2, };
+              }else {
+                 return {color: "#000000", weight: 2, };
+              }
+           },
+          onEachFeature: function(feature,layer){
+            if (feature.properties){
+              var content="<table class='table table-xl table-bordered=0px table-condensed width=200'>" + "<tr><th>Kode Jalan</th><td>" + feature.properties.kodeJalanK + "</td></tr>" + "<tr><th>Nama Jalan</th><td>" + feature.properties.namaJalanK + "</td></tr>"+ "<tr><th>Fungsi Jalan</th><td>" + feature.properties.fungsiJalanK + "</td></tr>"+"<tr><th>Foto</th><td><img src='"+ feature.properties.foto + "'width='100' /></td></tr>"+ "</table>";
+              layer.on({
+                click:function(e){
+                  layer.bindPopup(content).openPopup(e.latlng);
+                }
+              });
+            }
+          }
+        }).addTo(map)
+
+        var jalankabupatenUrl = 'jalankabupaten';
+        $.getJSON(jalankabupatenUrl, function (data) {
+          jalankabupaten.addData(data);
+        });
+      //akhir menampilkan data jalan kabupaten
+
+      //awal menampilkan data infrastruktur jalan
+      var infrastrukturjalan = L.geoJson(null,{
+           style: function(feature){
+              value = feature.properties.id;
+              if (value >=0){
+                 return {color: "blue", weight: 2, };
+              }else {
+                 return {color: "blue", weight: 2, };
+              }
+           },
+          onEachFeature: function(feature,layer){
+            if (feature.properties){
+              var content="<table class='table table-xl table-bordered=0px table-condensed width=200'>" + "<tr><th>Kode Infrastruktur</th><td>" + feature.properties.id + "</td></tr>" + "<tr><th>Nama Infrastruktur Jalan</th><td>" + feature.properties.namaInfrastrukturJ + "</td></tr>"+ "<tr><th>Tahun Kegiatan</th><td>" + feature.properties.tahun + "</td></tr>"+"<tr><th>Foto</th><td><img src='"+ feature.properties.foto + "'width='100' /></td></tr>"+ "</table>";
+              layer.on({
+                click:function(e){
+                  layer.bindPopup(content).openPopup(e.latlng);
+                }
+              });
+            }
+          }
+        }).addTo(map)
+
+        var infrastrukturjalanUrl = 'infrastrukturjalan';
+        $.getJSON(infrastrukturjalanUrl, function (data) {
+          infrastrukturjalan.addData(data);
+        });
+      //akhir menampilkan data infrastruktur jalan
+
+//awal menampilkan data Dinas
+  var dinas = L.geoJson(
+    null, {
+            pointToLayer: function (feature, latlng) {
+              return L.marker(latlng, {
+                icon: L.icon({
+              iconUrl: "static/img/red.png",
+              iconSize: [12, 14],
+              iconAnchor: [12, 28],
+              popupAnchor: [0, -25]
+            }),
+            title: feature.properties.dinas,
+            riseOnHover: true
+            });
+            },
+      onEachFeature: function(feature,layer){
+        if (feature.properties){
+          layer.bindTooltip(feature.properties.dinas, {permanent:true, className: "my-label", offset: [-5, -25]})
+          var content="<table class='table table-sm table-bordered=0px table-condensed'>" + "<tr><th>Nama Dinas</th><td>" + feature.properties.dinas + "</td></tr>" + "<tr><th>Jumlah ASN</th><td>" + feature.properties.ASN + "</td></tr>" + "<tr><th>Anggaran 2019</th><td>" + feature.properties.anggaran2019 + "</td></tr>" +"<tr><th>Foto</th><td><img src='"+ feature.properties.foto + "'width='100' /></td></tr>"+ "</table>";
+          layer.on({
+            click:function(e){
+              layer.bindPopup(content).openPopup(e.latlng);
+            }
+          });
+        }
+      }
+    }).addTo(map);
+
+    var dinasUrl = 'dinas';
+
+    $.getJSON(dinasUrl, function (data) {
+      dinas.addData(data);
+    });
+
+  //akhir menampilkan data Dinas
+
+    var baseLayers = {
+    "Open Street Map": osm,
+    "Topo Map": OpenTopoMap,
+    "Google Hybrid": googleHybrid,
+    };
+
+    var groupedOverlays = {
+    "kecamatan": {
+      "Batas Administrasi": kecamatan,
+    },
+    "Jalan": {
+      "Jalan Propinsi": jalanpropinsi,
+      "Jalan Kabupaten": jalankabupaten,
+    },
+    "Kegiatan Infrastruktur":{
+      "Pembangunan Sarana": sarpras,
+      "Pembangunan Jalan": infrastrukturjalan,
+    },
+    "Sarana dan Prasarana":{
+      "Dinas": dinas,
+    },
+    };
+
+    var featureGroup = L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
+    L.control.mousePosition({position: "topright",}).addTo(map);
+    L.control.scale().addTo(map);
+
+
+    var legend = L.control({position: 'bottomright'});
+  </script>
+  <!-- Geolocation
+  <script>
+		var x = document.getElementById("geolocation_demo");
+
+		function getLocation()
+
+		 {
+
+			var options = {
+			  enableHighAccuracy: true,
+			  timeout: 50000,
+			  maximumAge: 0
+			};
+
+			function success(pos) {
+			  var crd = pos.coords;
+
+			  console.log('Your current position is:');
+			  console.log('Latitude : '+ crd.latitude);
+			  console.log(`Longitude: ${crd.longitude}`);
+			  console.log('More or less ' + crd.accuracy + ' meters.');
+			  x.innerHTML = "Latitude: " + crd.latitude + "<br>Longitude: "  + crd.longitude +"<br> Akurasi: " + crd.accuracy + " meter";
+			}
+
+			function error(err) {
+			  console.warn(`ERROR(${err.code}): ${err.message}`);
+			}
+
+			navigator.geolocation.getCurrentPosition(success, error, options);
+		}-->
+	</script>
